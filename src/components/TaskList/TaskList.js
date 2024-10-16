@@ -1,12 +1,26 @@
 import React from 'react';
-
 import Task from '../Task';
 import './TaskList.css';
 
-function TaskList({ todoList, onChangeTaskItem, onDeleteTaskItem }) {
-  const elements = todoList.map((item) => (
+function TaskList({ todoList, onChangeTaskItem, onDeleteTaskItem, activeFilter }) {
+  const filteredTasks = () => {
+    switch (activeFilter) {
+      case 'completed':
+        return todoList.filter(item => item.isCompleted);
+      case 'active':
+        return todoList.filter(item => !item.isCompleted);
+      default:
+        return todoList;
+    }
+  };
+
+  const elements = filteredTasks().map((item) => (
     <li key={item.id} className={item.isHidden ? `${item.className} hidden` : item.className}>
-      <Task todoList={item} onChangeTaskItem={onChangeTaskItem} onDeleteTaskItem={onDeleteTaskItem} />
+      <Task
+        todoList={item}
+        onChangeTaskItem={onChangeTaskItem}
+        onDeleteTaskItem={onDeleteTaskItem}
+      />
     </li>
   ));
 
@@ -14,15 +28,10 @@ function TaskList({ todoList, onChangeTaskItem, onDeleteTaskItem }) {
 }
 
 TaskList.propTypes = {
-  todoList: (props, propName, componentName) => {
-    const valueProps = props[propName];
-
-    if (typeof valueProps === 'object') {
-      return null;
-    }
-
-    return new TypeError(`${componentName} must be object`);
-  },
+  todoList: PropTypes.array.isRequired,
+  onChangeTaskItem: PropTypes.func.isRequired,
+  onDeleteTaskItem: PropTypes.func.isRequired,
+  activeFilter: PropTypes.string.isRequired,
 };
 
 export default TaskList;
