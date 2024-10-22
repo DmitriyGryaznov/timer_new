@@ -1,7 +1,6 @@
 import './Task.css';
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { useState, useEffect } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 
 const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
@@ -13,25 +12,25 @@ const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
   const [idInterval, setIdInterval] = useState('');
   const [isAccessToStartTimer, setIsAccessToStartTimer] = useState(false);
 
-  //************************************************************************************************************************************************************
   useEffect(() => {
     if (!isAccessToStartTimer) {
       return;
     }
 
-    if ((minutes === 0 || minutes === null) && seconds <= 0) {
-      setMinutes(null);
-      setSeconds(null);
+    if (minutes === null && seconds <= 0) {
       clearInterval(idInterval);
       return;
     }
 
-    if (minutes > 0 && seconds <= 0) {
+    if (seconds > 0) {
+      setSeconds((prevSeconds) => prevSeconds - 1);
+    } else if (minutes > 0) {
       setMinutes((prevMinutes) => prevMinutes - 1);
       setSeconds(59);
-      return;
+    } else {
+      clearInterval(idInterval);
     }
-  });
+  }, [isAccessToStartTimer, minutes, seconds, idInterval]);
 
   useEffect(() => {
     return () => {
@@ -39,12 +38,7 @@ const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
         clearInterval(idInterval);
       }
     };
-  }, []);
-  //************************************************************************************************************************************************************
-
-  const timer = () => {
-    setSeconds((prevSecond) => prevSecond - 1);
-  };
+  }, [idInterval]);
 
   const handlerPlay = (e) => {
     if (e.target.className !== 'icon icon-play') {
@@ -53,7 +47,7 @@ const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
 
     if (!idInterval) {
       setIsAccessToStartTimer(true);
-      setIdInterval(setInterval(() => timer(), 1000));
+      setIdInterval(setInterval(() => {}, 1000));
     }
   };
 
@@ -86,22 +80,15 @@ const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
     if (e.key === 'Enter') {
       onChangeTaskItem(todoList.id, true, value);
       setValue('');
-
       changeRenderingData(false);
     }
   };
 
   const changeValue = (e) => setValue(e.target.value);
-
   const createdAgo = `created ${formatDistanceToNow(todoList.dateOfCreation)} ago`;
 
-  let localMinutes;
-  let localSeconds;
-
-  if (minutes || seconds) {
-    localMinutes = minutes ? minutes : 0;
-    localSeconds = seconds ? seconds : 0;
-  }
+  let localMinutes = minutes || 0;
+  let localSeconds = seconds || 0;
 
   return (
     <div>
@@ -119,7 +106,7 @@ const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
           <span className={minutes !== null || seconds !== null ? 'description' : 'hidden'}>
             <button className="icon icon-play" onClick={handlerPlay}></button>
             <button className="icon icon-pause" onClick={handlerPause}></button>
-            {`${localMinutes}:${localSeconds}`}
+            {`${localMinutes}:${localSeconds < 10 ? `0${localSeconds}` : localSeconds}`}
           </span>
           <span className="description">{createdAgo}</span>
         </label>

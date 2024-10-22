@@ -1,1 +1,1 @@
-https://timerneww-hcjnxhkib-dmitriys-projects-da1d0bdd.vercel.app/
+https://timer-newww.vercel.app/

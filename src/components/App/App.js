@@ -1,7 +1,5 @@
 import React, { useState } from 'react';
-
 import './App.css';
-
 import Header from '../Header';
 import NewTaskForm from '../NewTaskForm';
 import TaskList from '../TaskList';
@@ -15,7 +13,6 @@ export default function App() {
       className: 'completed',
       description: 'Completed task',
       id: 1,
-      isHidden: false,
       minutes: 0,
       seconds: 0,
       dateOfCreation: new Date('June 25, 2024 23:15:30'),
@@ -24,7 +21,6 @@ export default function App() {
       className: 'editing',
       description: 'Editing task',
       id: 2,
-      isHidden: false,
       minutes: 0,
       seconds: 0,
       dateOfCreation: new Date('June 26, 2024 16:14:11'),
@@ -33,7 +29,6 @@ export default function App() {
       className: '',
       description: 'Active task',
       id: 3,
-      isHidden: false,
       minutes: '3',
       seconds: '34',
       dateOfCreation: new Date('June 27, 2024 13:00:00'),
@@ -41,6 +36,7 @@ export default function App() {
   ]);
 
   const [id, setId] = useState(100);
+  const [filter, setFilter] = useState('all');
 
   const changeTaskItem = (id, isEditing = false, description = '') => {
     setTasks((tasks) => {
@@ -50,13 +46,9 @@ export default function App() {
       if (!isEditing) {
         if (tasks[idx].className === 'completed') {
           newItem = { ...tasks[idx], className: '' };
-        }
-
-        if (!tasks[idx].className) {
+        } else if (!tasks[idx].className) {
           newItem = { ...tasks[idx], className: 'completed' };
-        }
-
-        if (tasks[idx].className === 'editing') {
+        } else if (tasks[idx].className === 'editing') {
           newItem = { ...tasks[idx], className: '' };
         }
       } else if (!description) {
@@ -66,93 +58,46 @@ export default function App() {
       }
 
       const newArray = [...tasks.slice(0, idx), newItem, ...tasks.slice(idx + 1)];
-
       return newArray;
     });
   };
 
   const deleteTaskItem = (id) => {
-    setTasks((tasks) => {
-      const idx = tasks.findIndex((el) => el.id === id);
-
-      const newArray = [...tasks.slice(0, idx), ...tasks.slice(idx + 1)];
-
-      return newArray;
-    });
+    setTasks((tasks) => tasks.filter((task) => task.id !== id));
   };
 
   const createTaskItem = (text, minutes, seconds) => {
-    setId((id) => id + 1);
-
     const newTask = {
       className: '',
       description: text,
       id: id,
       minutes: minutes,
       seconds: seconds,
-      isHidden: false,
       dateOfCreation: new Date(),
     };
-
+    setId((id) => id + 1);
     return newTask;
   };
 
   const addTaskItem = (text, minutes, seconds) => {
-    const newObject = [...tasks, createTaskItem(text, minutes, seconds)];
-
-    setTasks(newObject);
+    const newTask = createTaskItem(text, minutes, seconds);
+    setTasks((tasks) => [...tasks, newTask]);
   };
 
   const changeTaskList = (typeOfFilter) => {
-    setTasks((tasks) => createFilteredArray(typeOfFilter, tasks));
+    setFilter(typeOfFilter);
   };
 
-  const createFilteredArray = (typeOfFilter, tasks) => {
-    const newFilteredArray = [];
-
-    tasks.map((task) => {
-      if (typeOfFilter.toLowerCase() === 'completed') {
-        if (task.className === typeOfFilter.toLowerCase()) {
-          newFilteredArray.push({ ...task, isHidden: false });
-        } else {
-          newFilteredArray.push({ ...task, isHidden: true });
-        }
-      }
-
-      if (typeOfFilter.toLowerCase() === 'active') {
-        if (task.className === '') {
-          newFilteredArray.push({ ...task, isHidden: false });
-        } else {
-          newFilteredArray.push({ ...task, isHidden: true });
-        }
-      }
-
-      if (typeOfFilter.toLowerCase() === 'all') {
-        newFilteredArray.push({ ...task, isHidden: false });
-      }
-    });
-
-    return newFilteredArray;
-  };
+  const filteredTasks = filter === 'all' 
+    ? tasks 
+    : tasks.filter((task) => (filter === 'completed' ? task.className === 'completed' : task.className === ''));
 
   const deleteCompletedTasks = () => {
-    tasks.map((task) => {
-      if (task.className === 'completed') {
-        deleteTaskItem(task.id);
-      }
-    });
+    setTasks((tasks) => tasks.filter((task) => task.className !== 'completed'));
   };
 
   const getCountOfUnfinishedTasks = () => {
-    let count = 0;
-
-    tasks.map((task) => {
-      if (task.className !== 'completed') {
-        count++;
-      }
-    });
-
-    return count;
+    return tasks.filter((task) => task.className !== 'completed').length;
   };
 
   return (
@@ -163,7 +108,7 @@ export default function App() {
       </header>
 
       <section className="main">
-        <TaskList todoList={tasks} onChangeTaskItem={changeTaskItem} onDeleteTaskItem={deleteTaskItem} />
+        <TaskList todoList={filteredTasks} onChangeTaskItem={changeTaskItem} onDeleteTaskItem={deleteTaskItem} />
 
         <footer className="footer">
           <CounterOfUnfinishedTasks countOfUnfinishedTasks={getCountOfUnfinishedTasks} />
