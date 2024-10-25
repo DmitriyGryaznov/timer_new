@@ -7,9 +7,9 @@ function TaskList({ todoList, onChangeTaskItem, onDeleteTaskItem, activeFilter }
   const filteredTasks = () => {
     switch (activeFilter) {
       case 'completed':
-        return todoList.filter(item => item.className === 'completed');
+        return todoList.filter(item => item.className === 'completed' || item.className === 'editing');
       case 'active':
-        return todoList.filter(item => item.className === '');
+        return todoList.filter(item => !item.className || item.className === 'editing');
       default:
         return todoList;
     }

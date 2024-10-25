@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-
 import './NewTaskForm.css';
 
-const NewTaskForm = ({ addTaskItem }) => {
+const NewTaskForm = ({ addTaskItem, endEditingTask }) => {
   const [text, setText] = useState('');
   const [minute, setMinute] = useState('');
   const [second, setSecond] = useState('');
@@ -10,16 +9,11 @@ const NewTaskForm = ({ addTaskItem }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    let localInFunctionMinute;
-    let localInFunctionSecond;
-
-    if (minute === '0' && second === '0') {
-      localInFunctionMinute = null;
-      localInFunctionSecond = null;
-    }
-
-    localInFunctionMinute = minute ? minute : null;
-    localInFunctionSecond = second ? second : null;
+    let localInFunctionMinute = minute ? minute : '00';  
+    let localInFunctionSecond = second ? second : '00'; 
+    
+    localInFunctionMinute = String(localInFunctionMinute).padStart(2, '0');
+    localInFunctionSecond = String(localInFunctionSecond).padStart(2, '0');
 
     addTaskItem(text, localInFunctionMinute, localInFunctionSecond);
 
@@ -38,8 +32,8 @@ const NewTaskForm = ({ addTaskItem }) => {
         required
         size="2"
         onChange={(e) => {
-          setText(e.target.value);
-        }}
+          endEditingTask();
+          setText(e.target.value)}}
         autoFocus
       />
       <input
@@ -49,9 +43,7 @@ const NewTaskForm = ({ addTaskItem }) => {
         max="9999"
         size="5"
         value={minute}
-        onChange={(e) => {
-          setMinute(e.target.value);
-        }}
+        onChange={(e) => setMinute(e.target.value)}
         placeholder="Min"
       />
       <input
@@ -61,9 +53,7 @@ const NewTaskForm = ({ addTaskItem }) => {
         max="59"
         size="5"
         value={second}
-        onChange={(e) => {
-          setSecond(e.target.value);
-        }}
+        onChange={(e) => setSecond(e.target.value)}
         placeholder="Sec"
       />
       <input hidden type="submit" />

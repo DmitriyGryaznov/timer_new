@@ -38,6 +38,16 @@ export default function App() {
   const [id, setId] = useState(100);
   const [filter, setFilter] = useState('all');
 
+  const endEditingTask = () => {
+    setTasks((tasks) => 
+      tasks.map(task => 
+        task.className === 'editing' ? 
+        { ...task, className: '' } : 
+        task
+      )
+    );
+  };
+
   const changeTaskItem = (id, isEditing = false, description = '') => {
     setTasks((tasks) => {
       const idx = tasks.findIndex((el) => el.id === id);
@@ -49,12 +59,12 @@ export default function App() {
         } else if (!tasks[idx].className) {
           newItem = { ...tasks[idx], className: 'completed' };
         } else if (tasks[idx].className === 'editing') {
-          newItem = { ...tasks[idx], className: '' };
+          newItem = { ...tasks[idx], className: 'completed' };
         }
       } else if (!description) {
         newItem = { ...tasks[idx], className: 'editing' };
       } else {
-        newItem = { ...tasks[idx], description };
+        newItem = { ...tasks[idx], description, className: 'completed' };
       }
 
       const newArray = [...tasks.slice(0, idx), newItem, ...tasks.slice(idx + 1)];
@@ -90,7 +100,14 @@ export default function App() {
 
   const filteredTasks = filter === 'all' 
     ? tasks 
-    : tasks.filter((task) => (filter === 'completed' ? task.className === 'completed' : task.className === ''));
+    : tasks.filter((task) => {
+        if (filter === 'completed') {
+          return task.className === 'completed';
+        } else if (filter === 'active') {
+          return task.className === '' || task.className === 'editing';
+        }
+        return false;
+      });
 
   const deleteCompletedTasks = () => {
     setTasks((tasks) => tasks.filter((task) => task.className !== 'completed'));
@@ -104,7 +121,7 @@ export default function App() {
     <section className="todoapp">
       <header className="header">
         <Header />
-        <NewTaskForm addTaskItem={addTaskItem} />
+        <NewTaskForm addTaskItem={addTaskItem} endEditingTask={endEditingTask} />
       </header>
 
       <section className="main">
