@@ -29,51 +29,60 @@ export default function App() {
       className: '',
       description: 'Active task',
       id: 3,
-      minutes: '3',
-      seconds: '34',
+      minutes: 3,
+      seconds: 34,
       dateOfCreation: new Date('June 27, 2024 13:00:00'),
     },
   ]);
 
   const [id, setId] = useState(100);
   const [filter, setFilter] = useState('all');
+  
+  const [timers, setTimers] = useState({});
+  const [intervals, setIntervals] = useState({});
 
   const endEditingTask = () => {
-    setTasks((tasks) => 
-      tasks.map(task => 
-        task.className === 'editing' ? 
-        { ...task, className: '' } : 
-        task
+    setTasks((tasks) =>
+      tasks.map(task =>
+        task.className === 'editing' ?
+          { ...task, className: '' } :
+          task
       )
     );
   };
 
   const changeTaskItem = (id, isEditing = false, description = '') => {
-    setTasks((tasks) => {
-      const idx = tasks.findIndex((el) => el.id === id);
-      let newItem;
-
-      if (!isEditing) {
-        if (tasks[idx].className === 'completed') {
-          newItem = { ...tasks[idx], className: '' };
-        } else if (!tasks[idx].className) {
-          newItem = { ...tasks[idx], className: 'completed' };
-        } else if (tasks[idx].className === 'editing') {
-          newItem = { ...tasks[idx], className: 'completed' };
+    setTasks(tasks => tasks.map(task => {
+      if (task.id === id) {
+        if (isEditing) {
+          return {
+            ...task,
+            className: 'editing',
+            description: description
+          };
+        } else if (task.className === 'editing') {
+          return {
+            ...task,
+            className: '',
+            description: description
+          };
+        } else {
+          return {
+            ...task,
+            className: task.className === 'completed' ? '' : 'completed',
+          };
         }
-      } else if (!description) {
-        newItem = { ...tasks[idx], className: 'editing' };
-      } else {
-        newItem = { ...tasks[idx], description, className: 'completed' };
       }
-
-      const newArray = [...tasks.slice(0, idx), newItem, ...tasks.slice(idx + 1)];
-      return newArray;
-    });
+      return task;
+    }));
   };
 
   const deleteTaskItem = (id) => {
     setTasks((tasks) => tasks.filter((task) => task.id !== id));
+    clearInterval(intervals[id]);
+    const newTimers = { ...timers };
+    delete newTimers[id];
+    setTimers(newTimers);
   };
 
   const createTaskItem = (text, minutes, seconds) => {
@@ -98,23 +107,58 @@ export default function App() {
     setFilter(typeOfFilter);
   };
 
-  const filteredTasks = filter === 'all' 
-    ? tasks 
+  const filteredTasks = filter === 'all'
+    ? tasks
     : tasks.filter((task) => {
-        if (filter === 'completed') {
-          return task.className === 'completed';
-        } else if (filter === 'active') {
-          return task.className === '' || task.className === 'editing';
-        }
-        return false;
-      });
+      if (filter === 'completed') {
+        return task.className === 'completed';
+      } else if (filter === 'active') {
+        return task.className === '' || task.className === 'editing';
+      }
+      return false;
+    });
 
   const deleteCompletedTasks = () => {
-    setTasks((tasks) => tasks.filter((task) => task.className !== 'completed'));
+    setTasks(tasks => tasks.filter(task => task.className !== 'completed'));
   };
 
   const getCountOfUnfinishedTasks = () => {
-    return tasks.filter((task) => task.className !== 'completed').length;
+    return tasks.filter(task => task.className !== 'completed').length;
+  };
+
+  const handleTimerStart = (id) => {
+    const task = timers[id] ? timers[id] : tasks.find(task => task.id === id);
+    const intervalId = setInterval(() => {
+      setTimers(prevTimers => {
+        const newTimers = { ...prevTimers };
+        if (newTimers[id]) {
+          if (newTimers[id].seconds > 0) {
+            newTimers[id].seconds--;
+          } else if (newTimers[id].minutes > 0) {
+            newTimers[id].minutes--;
+            newTimers[id].seconds = 59;
+          }
+        }
+        return newTimers;
+      });
+    }, 1000);
+
+    setIntervals(prevIntervals => ({
+      ...prevIntervals,
+      [id]: intervalId,
+    }));
+
+    setTimers(prevTimers => ({
+      ...prevTimers,
+      [id]: { minutes: task.minutes, seconds: task.seconds },
+    }));
+  };
+
+  const handleTimerPause = (id) => {
+    clearInterval(intervals[id]);
+    const newIntervals = { ...intervals };
+    delete newIntervals[id];
+    setIntervals(newIntervals);
   };
 
   return (
@@ -125,8 +169,15 @@ export default function App() {
       </header>
 
       <section className="main">
-        <TaskList todoList={filteredTasks} onChangeTaskItem={changeTaskItem} onDeleteTaskItem={deleteTaskItem} />
-
+        <TaskList 
+          todoList={filteredTasks} 
+          onChangeTaskItem={changeTaskItem} 
+          onDeleteTaskItem={deleteTaskItem} 
+          handleTimerStart={handleTimerStart} 
+          handleTimerPause={handleTimerPause} 
+          timers={timers} 
+        />
+        
         <footer className="footer">
           <CounterOfUnfinishedTasks countOfUnfinishedTasks={getCountOfUnfinishedTasks} />
           <TasksFilter filterList={changeTaskList} />

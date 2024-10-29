@@ -1,107 +1,63 @@
 import './Task.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import PropTypes from 'prop-types';
 import { formatDistanceToNow } from 'date-fns';
 
-const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem }) => {
+const Task = ({ todoList, onChangeTaskItem, onDeleteTaskItem, handleTimerStart, handleTimerPause, timers }) => {
   const isEditing = todoList.className === 'editing';
-
   const [value, setValue] = useState(todoList.description);
-  const [minutes, setMinutes] = useState(todoList.minutes);
-  const [seconds, setSeconds] = useState(todoList.seconds);
-  const [idInterval, setIdInterval] = useState(null);
-  const [isAccessToStartTimer, setIsAccessToStartTimer] = useState(false);
 
-  useEffect(() => {
-    if (!isAccessToStartTimer || (minutes === 0 && seconds === 0)) {
-      clearInterval(idInterval);
-      return;
-    }
-
-    const intervalId = setInterval(() => {
-      setSeconds((prevSeconds) => {
-        if (prevSeconds > 0) {
-          return prevSeconds - 1;
-        } else if (minutes > 0) {
-          setMinutes((prevMinutes) => prevMinutes - 1);
-          return 59; 
-        }
-        return 0; 
-      });
-    }, 1000);
-
-    setIdInterval(intervalId);
-
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isAccessToStartTimer, minutes, seconds]);
-
-  const handlerPlay = () => {
-    if (!isAccessToStartTimer && !(minutes === 0 && seconds === 0)) {
-      setIsAccessToStartTimer(true);
-    }
-  };
-
-  const handlerPause = () => {
-    setIsAccessToStartTimer(false);
-    clearInterval(idInterval);
-  };
-
-  const onLabelClick = () => {
-    onChangeTaskItem(todoList.id);
-  };
-
-  const onLabelClickDestroy = () => {
-    onDeleteTaskItem(todoList.id);
-    clearInterval(idInterval);
-  };
-
-  const changeRenderingData = (isEditing = true) => {
-    if (idInterval) {
-      clearInterval(idInterval);
-    }
-    onChangeTaskItem(todoList.id, isEditing);
-  };
-
-  const changeDescription = (e) => {
+  const handleKeyPress = (e) => {
     if (e.key === 'Enter') {
-      onChangeTaskItem(todoList.id, true, value);
+      onChangeTaskItem(todoList.id, false, value); // Сохраняем описание при нажатии Enter
       setValue('');
-      changeRenderingData(false);
     }
   };
 
-  const changeValue = (e) => setValue(e.target.value);
-  const createdAgo = `создано ${formatDistanceToNow(todoList.dateOfCreation)} назад`;
+  const formattedTime = () => {
+    if (timers[todoList.id]) {
+      const { minutes, seconds } = timers[todoList.id];
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+    }
+    return `${String(todoList.minutes).padStart(2, '0')}:${String(todoList.seconds).padStart(2, '0')}`;
+  };
 
-  const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  const shouldDisplayTimer = todoList.minutes > 0 || todoList.seconds > 0;
 
   return (
     <div>
       <div className="view">
         <input
           className="toggle"
-          onChange={onLabelClick}
+          onChange={() => onChangeTaskItem(todoList.id)}
           checked={todoList.className === 'completed'}
           type="checkbox"
         />
         <label>
-          <span className="title" onClick={onLabelClick}>
+          <span className="title" onClick={() => onChangeTaskItem(todoList.id)}>
             {todoList.description}
           </span>
-          <span className={minutes !== 0 || seconds !== 0 ? 'description' : 'hidden'}>
-            <button className="icon icon-play" onClick={handlerPlay}></button>
-            <button className="icon icon-pause" onClick={handlerPause}></button>
-            {formattedTime}
-          </span>
-          <span className="description">{createdAgo}</span>
+          {(todoList.className !== 'completed' && shouldDisplayTimer) && (
+            <span className="description">
+              <button className="icon icon-play" onClick={() => handleTimerStart(todoList.id)}></button>
+              <button className="icon icon-pause" onClick={() => handleTimerPause(todoList.id)}></button>
+              {formattedTime()}
+            </span>
+          )}
+          <span className="description">создано {formatDistanceToNow(todoList.dateOfCreation)} назад</span>
         </label>
-        <button className="icon icon-edit" onClick={() => changeRenderingData(true)}></button>
-        <button className="icon icon-destroy" onClick={onLabelClickDestroy}></button>
+        <button className="icon icon-edit" onClick={() => onChangeTaskItem(todoList.id, true)}></button>
+        <button className="icon icon-destroy" onClick={() => onDeleteTaskItem(todoList.id)}></button>
       </div>
       {isEditing && (
-        <input type="text" className="edit" value={value} onChange={changeValue} onKeyPress={changeDescription} />
+        <input
+          type="text"
+          className="edit"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          onKeyPress={handleKeyPress}
+          onBlur={() => onChangeTaskItem(todoList.id, false, value)}
+        />
       )}
     </div>
   );
@@ -118,6 +74,9 @@ Task.propTypes = {
   }).isRequired,
   onChangeTaskItem: PropTypes.func.isRequired,
   onDeleteTaskItem: PropTypes.func.isRequired,
+  handleTimerStart: PropTypes.func.isRequired,
+  handleTimerPause: PropTypes.func.isRequired,
+  timers: PropTypes.object.isRequired,
 };
 
 export default Task;

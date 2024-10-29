@@ -3,24 +3,16 @@ import PropTypes from 'prop-types';
 import Task from '../Task';
 import './TaskList.css';
 
-function TaskList({ todoList, onChangeTaskItem, onDeleteTaskItem, activeFilter }) {
-  const filteredTasks = () => {
-    switch (activeFilter) {
-      case 'completed':
-        return todoList.filter(item => item.className === 'completed' || item.className === 'editing');
-      case 'active':
-        return todoList.filter(item => !item.className || item.className === 'editing');
-      default:
-        return todoList;
-    }
-  };
-
-  const elements = filteredTasks().map((item) => (
-    <li key={item.id} className={item.isHidden ? `${item.className} hidden` : item.className}>
+function TaskList({ todoList, onChangeTaskItem, onDeleteTaskItem, handleTimerStart, handleTimerPause, timers }) {
+  const elements = todoList.map((item) => (
+    <li key={item.id} className={item.className}>
       <Task
         todoList={item}
         onChangeTaskItem={onChangeTaskItem}
         onDeleteTaskItem={onDeleteTaskItem}
+        handleTimerStart={handleTimerStart}
+        handleTimerPause={handleTimerPause}
+        timers={timers}
       />
     </li>
   ));
@@ -32,7 +24,9 @@ TaskList.propTypes = {
   todoList: PropTypes.array.isRequired,
   onChangeTaskItem: PropTypes.func.isRequired,
   onDeleteTaskItem: PropTypes.func.isRequired,
-  activeFilter: PropTypes.string.isRequired,
+  handleTimerStart: PropTypes.func.isRequired,
+  handleTimerPause: PropTypes.func.isRequired,
+  timers: PropTypes.object.isRequired,
 };
 
 export default TaskList;
